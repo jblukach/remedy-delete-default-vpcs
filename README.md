@@ -1,6 +1,6 @@
 # remedy-delete-default-vpcs
 
-A blank project for Python development with CDK:
+Set up a blank project for Python development with CDK:
 
 ```
 $ cdk init app --language python

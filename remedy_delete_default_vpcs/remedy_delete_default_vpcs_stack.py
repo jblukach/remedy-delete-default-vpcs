@@ -1,10 +1,12 @@
-from aws_cdk import core as cdk
-
-# For consistency with other languages, `cdk` is the preferred import name for
-# the CDK's core module.  The following line also imports it as `core` for use
-# with examples from the CDK Developer's Guide, which are in the process of
-# being updated to use `cdk`.  You may delete this import if you don't need it.
-from aws_cdk import core
+from aws_cdk import (
+    core as cdk,
+    aws_events as _events,
+    aws_events_targets as _targets,
+    aws_iam as _iam,
+    aws_lambda as _lambda,
+    aws_logs as _logs,
+    aws_ssm as _ssm,
+)
 
 
 class RemedyDeleteDefaultVpcsStack(cdk.Stack):
@@ -12,4 +14,73 @@ class RemedyDeleteDefaultVpcsStack(cdk.Stack):
     def __init__(self, scope: cdk.Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
-        # The code that defines your stack goes here
+        role = _iam.Role(
+            self, 'role', 
+            assumed_by = _iam.ServicePrincipal(
+                'lambda.amazonaws.com'
+            )
+        )
+        
+        role.add_managed_policy(
+            _iam.ManagedPolicy.from_aws_managed_policy_name(
+                'service-role/AWSLambdaBasicExecutionRole'
+            )
+        )
+        
+        role.add_to_policy(
+            _iam.PolicyStatement(
+                actions = [
+                    'ec2:DescribeRegions',
+                    'ec2:DescribeVpcs',
+                    'ec2:DeleteVpc',
+                    'ec2:DescribeInternetGateways',
+                    'ec2:DetachInternetGateway',
+                    'ec2:DeleteInternetGateway',
+                    'ec2:DescribeSubnets',
+                    'ec2:DeleteSubnet',
+                    'events:DisableRule',
+                    'ssm:GetParameter'
+                ],
+                resources = ['*']
+            )
+        )
+
+        compute = _lambda.Function(
+            self, 'compute',
+            code = _lambda.Code.from_asset('lambda'),
+            handler = 'remedy.handler',
+            runtime = _lambda.Runtime.PYTHON_3_8,
+            timeout = cdk.Duration.seconds(30),
+            role = role,
+            environment = dict(
+                RULE = 'delete-default-vpcs'
+            ),
+            memory_size = 128
+        )
+       
+        logs = _logs.LogGroup(
+            self, 'logs',
+            log_group_name = '/aws/lambda/'+compute.function_name,
+            retention = _logs.RetentionDays.ONE_DAY,
+            removal_policy = cdk.RemovalPolicy.DESTROY
+        )
+
+        rule = _events.Rule(
+            self, 'rule',
+            schedule = _events.Schedule.cron(
+                minute = '*',
+                hour = '*',
+                month = '*',
+                week_day = '*',
+                year = '*'
+            )
+        )
+        rule.add_target(_targets.LambdaFunction(compute))
+
+        parameter = _ssm.StringParameter(
+            self, 'parameter',
+            description = 'Delete Default VPCs',
+            parameter_name = 'delete-default-vpcs',
+            string_value = rule.rule_name,
+            tier = _ssm.ParameterTier.STANDARD
+        )

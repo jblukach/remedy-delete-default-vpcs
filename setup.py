@@ -19,7 +19,7 @@ setuptools.setup(
     packages=setuptools.find_packages(where="remedy_delete_default_vpcs"),
 
     install_requires=[
-        "aws-cdk.core==1.107.0",
+        "aws-cdk.core==1.108.1",
     ],
 
     python_requires=">=3.6",
