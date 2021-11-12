@@ -7,7 +7,8 @@ from remedy_delete_default_vpcs.remedy_delete_default_vpcs_stack import RemedyDe
 
 app = cdk.App()
 
-RemedyDeleteDefaultVpcsStack(app, 'RemedyDeleteDefaultVpcsStack',
+RemedyDeleteDefaultVpcsStack(
+    app, 'RemedyDeleteDefaultVpcsStack',
     synthesizer = cdk.DefaultStackSynthesizer(
         qualifier = '4n6ir'
     )

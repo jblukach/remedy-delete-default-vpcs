@@ -45,22 +45,23 @@ class RemedyDeleteDefaultVpcsStack(cdk.Stack):
             )
         )
 
-        compute = _lambda.Function(
-            self, 'compute',
-            code = _lambda.Code.from_asset('lambda'),
+        remedy = _lambda.Function(
+            self, 'remedy',
+            code = _lambda.Code.from_asset('remedy'),
             handler = 'remedy.handler',
-            runtime = _lambda.Runtime.PYTHON_3_8,
+            runtime = _lambda.Runtime.PYTHON_3_9,
             timeout = cdk.Duration.seconds(30),
             role = role,
             environment = dict(
                 RULE = 'delete-default-vpcs'
             ),
+            architecture = _lambda.Architecture.ARM_64,
             memory_size = 128
         )
        
         logs = _logs.LogGroup(
             self, 'logs',
-            log_group_name = '/aws/lambda/'+compute.function_name,
+            log_group_name = '/aws/lambda/'+remedy.function_name,
             retention = _logs.RetentionDays.ONE_DAY,
             removal_policy = cdk.RemovalPolicy.DESTROY
         )
@@ -75,7 +76,7 @@ class RemedyDeleteDefaultVpcsStack(cdk.Stack):
                 year = '*'
             )
         )
-        rule.add_target(_targets.LambdaFunction(compute))
+        rule.add_target(_targets.LambdaFunction(remedy))
 
         parameter = _ssm.StringParameter(
             self, 'parameter',
