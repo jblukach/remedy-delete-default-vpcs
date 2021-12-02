@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import os
 
-from aws_cdk import core as cdk
+import aws_cdk as cdk
 
 from remedy_delete_default_vpcs.remedy_delete_default_vpcs_stack import RemedyDeleteDefaultVpcsStack
 

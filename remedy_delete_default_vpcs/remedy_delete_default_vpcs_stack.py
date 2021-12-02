@@ -1,5 +1,7 @@
 from aws_cdk import (
-    core as cdk,
+    Duration,
+    RemovalPolicy,
+    Stack,
     aws_events as _events,
     aws_events_targets as _targets,
     aws_iam as _iam,
@@ -8,10 +10,11 @@ from aws_cdk import (
     aws_ssm as _ssm,
 )
 
+from constructs import Construct
 
-class RemedyDeleteDefaultVpcsStack(cdk.Stack):
+class RemedyDeleteDefaultVpcsStack(Stack):
 
-    def __init__(self, scope: cdk.Construct, construct_id: str, **kwargs) -> None:
+    def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
         role = _iam.Role(
@@ -50,7 +53,7 @@ class RemedyDeleteDefaultVpcsStack(cdk.Stack):
             code = _lambda.Code.from_asset('remedy'),
             handler = 'remedy.handler',
             runtime = _lambda.Runtime.PYTHON_3_9,
-            timeout = cdk.Duration.seconds(30),
+            timeout = Duration.seconds(30),
             role = role,
             environment = dict(
                 RULE = 'delete-default-vpcs'
@@ -63,7 +66,7 @@ class RemedyDeleteDefaultVpcsStack(cdk.Stack):
             self, 'logs',
             log_group_name = '/aws/lambda/'+remedy.function_name,
             retention = _logs.RetentionDays.ONE_DAY,
-            removal_policy = cdk.RemovalPolicy.DESTROY
+            removal_policy = RemovalPolicy.DESTROY
         )
 
         rule = _events.Rule(
