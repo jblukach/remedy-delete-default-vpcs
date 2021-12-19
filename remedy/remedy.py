@@ -58,13 +58,6 @@ def handler(event, context):
                             logger.info('USED '+str(item))
                             pass
 
-    client = boto3.client('ssm')
-    response = client.get_parameter(Name=os.environ['RULE'])
-    value = response['Parameter']['Value']
-
-    client = boto3.client('events')
-    response = client.disable_rule(Name=value)
-
     return {
         'statusCode': 200,
         'body': json.dumps('Delete Default VPCs')

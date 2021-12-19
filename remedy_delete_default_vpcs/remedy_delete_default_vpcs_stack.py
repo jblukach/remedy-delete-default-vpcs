@@ -1,13 +1,12 @@
 from aws_cdk import (
+    CustomResource,
     Duration,
     RemovalPolicy,
     Stack,
-    aws_events as _events,
-    aws_events_targets as _targets,
     aws_iam as _iam,
     aws_lambda as _lambda,
     aws_logs as _logs,
-    aws_ssm as _ssm,
+    custom_resources as custom
 )
 
 from constructs import Construct
@@ -40,9 +39,7 @@ class RemedyDeleteDefaultVpcsStack(Stack):
                     'ec2:DetachInternetGateway',
                     'ec2:DeleteInternetGateway',
                     'ec2:DescribeSubnets',
-                    'ec2:DeleteSubnet',
-                    'events:DisableRule',
-                    'ssm:GetParameter'
+                    'ec2:DeleteSubnet'
                 ],
                 resources = ['*']
             )
@@ -53,13 +50,10 @@ class RemedyDeleteDefaultVpcsStack(Stack):
             code = _lambda.Code.from_asset('remedy'),
             handler = 'remedy.handler',
             runtime = _lambda.Runtime.PYTHON_3_9,
-            timeout = Duration.seconds(30),
-            role = role,
-            environment = dict(
-                RULE = 'delete-default-vpcs'
-            ),
             architecture = _lambda.Architecture.ARM_64,
-            memory_size = 128
+            timeout = Duration.seconds(30),
+            memory_size = 128,
+            role = role
         )
        
         logs = _logs.LogGroup(
@@ -69,22 +63,12 @@ class RemedyDeleteDefaultVpcsStack(Stack):
             removal_policy = RemovalPolicy.DESTROY
         )
 
-        rule = _events.Rule(
-            self, 'rule',
-            schedule = _events.Schedule.cron(
-                minute = '*',
-                hour = '*',
-                month = '*',
-                week_day = '*',
-                year = '*'
-            )
+        provider = custom.Provider(
+            self, 'provider',
+            on_event_handler = remedy
         )
-        rule.add_target(_targets.LambdaFunction(remedy))
 
-        parameter = _ssm.StringParameter(
-            self, 'parameter',
-            description = 'Delete Default VPCs',
-            parameter_name = 'delete-default-vpcs',
-            string_value = rule.rule_name,
-            tier = _ssm.ParameterTier.STANDARD
+        resource = CustomResource(
+            self, 'resource',
+            service_token = provider.service_token
         )
