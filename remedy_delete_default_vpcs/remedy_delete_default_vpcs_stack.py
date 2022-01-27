@@ -6,7 +6,7 @@ from aws_cdk import (
     aws_iam as _iam,
     aws_lambda as _lambda,
     aws_logs as _logs,
-    custom_resources as custom
+    custom_resources as _custom
 )
 
 from constructs import Construct
@@ -63,7 +63,7 @@ class RemedyDeleteDefaultVpcsStack(Stack):
             removal_policy = RemovalPolicy.DESTROY
         )
 
-        provider = custom.Provider(
+        provider = _custom.Provider(
             self, 'provider',
             on_event_handler = remedy
         )
